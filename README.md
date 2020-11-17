@@ -25,7 +25,7 @@ It is based on [chryzsh's CS Ansible Role](https://github.com/chryzsh/ansible-ro
 
 From the root repo directory:
 ```bash
-ansible-galaxy install -r ./requirements
+ansible-galaxy install joeminicucci.cobalt_strike
 ```
 
 This repo is typically utilized within a devops pipeline that has C2 profiles, TLS certficates, and Oracle JDK tarballs dynamically generated & placed before the playbook is executed. For reference, here are the manual steps which would need to be taken  assuming the Role is invoked with default variables, on a fresh machine:
