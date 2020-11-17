@@ -22,8 +22,6 @@ It is based on [chryzsh's CS Ansible Role](https://github.com/chryzsh/ansible-ro
   - Profiles are placed in `~/cobaltstrike/profiles`
 
 ## Installation
-
-From the root repo directory:
 ```bash
 ansible-galaxy install joeminicucci.cobalt_strike
 ```
