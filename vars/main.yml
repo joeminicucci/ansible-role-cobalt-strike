@@ -1,0 +1,16 @@
+#Global
+cobalt_strike_role: teamserver
+license_key: aaaa-bbbb-cccc-dddd
+oracle_directory: "{{ playbook_dir }}/../oracle/"
+oracle_jdk: jdk-8u261-linux-x64.tar.gz
+#operator
+#teamserver
+bind_address: 127.0.0.1
+c2_profile:
+cert_directory: "{{ playbook_dir }}/../certificates"
+cert_filename: "{{ domain }}_cert.pem"
+domain:
+priv_cert_filename: "{{ domain }}_privkey.pem"
+profile_directory: "{{ playbook_dir }}/../c2_profiles"
+teamserver_password: passypass
+tls_pass: badPassw0rd

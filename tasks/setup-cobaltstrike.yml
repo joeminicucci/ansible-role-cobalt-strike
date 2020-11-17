@@ -1,0 +1,127 @@
+---
+# General installation
+- name: Write license key to file
+  copy:
+    content: "{{ license_key }}"
+    dest: "{{ ansible_env.HOME }}/.cobaltstrike.license"
+
+#workaround for openjdk incompatibility issues
+- name: Prepare Oracle JDK Environment
+  file:
+    path: /opt/jdk8
+    state: directory
+  become: yes
+
+#- name: Write Oracle JDK to disk
+#    copy:
+#      content: "{{ playbook_dir }}/oracle/{{ oracle_jdk }}"
+#      dest: /opt/jdk/
+#
+#- name: Unpack Oracle JDK
+#  unarchive:
+#    src: "/opt/jdk/{{ oracle_jdk }}"
+#    dest: /opt/jdk/
+#    remote_src: yes
+
+- name: Unpack Oracle JDK
+  unarchive:
+    src: "{{ oracle_directory }}/{{ oracle_jdk }}"
+    dest: /opt/jdk8
+    remote_src: no
+    extra_opts: [--strip-components=1]
+#    creates: /opt/jdk8
+  become: yes
+
+
+- name: Update alternatives JDK link created
+  community.general.alternatives:
+    name: java
+    link: /usr/bin/java
+    path: /opt/jdk8/bin/java
+    priority: 100
+  become: yes
+
+- name: Update global PATH
+  blockinfile:
+    path: /etc/environment
+    block: |
+      JAVA_HOME=/opt/jdk8
+      JRE_HOME=/opt/jdk8/jre
+      export PATH="{{ lookup('env','PATH') }}:{{ lookup('env','JAVA_HOME') }}/bin"
+  become: yes
+
+- name: Update bashrc for JDK
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    block: |
+      JAVA_HOME=/opt/jdk8
+      JRE_HOME=/opt/jdk8/jre
+      export PATH="{{ lookup('env','PATH') }}:$JAVA_HOME/bin"
+
+- name: Update root bashrc for JDK
+  blockinfile:
+    path: "/root/.bashrc"
+    block: |
+      JAVA_HOME=/opt/jdk8
+      JRE_HOME=/opt/jdk8/jre
+      export PATH="{{ lookup('env','PATH') }}:$JAVA_HOME/bin"
+  become: yes
+
+- name: Update sudoers secure_path for JDK
+  lineinfile:
+    path: "/etc/sudoers"
+    regexp: '^(Defaults\t* *secure_path)(.*=*)(?P<secpath>\".*)(.*\".*)$'
+    line: \g<1>\g<2>\g<secpath>:/opt/jdk8/bin\g<4>
+    backrefs: yes
+  become: yes
+
+
+# Default mystery meat openjdk11 is not working in debian - contacted Mudge and he recommends:
+#jdk.java.net or https://adoptopenjdk.net/
+#https://www.cobaltstrike.com/help-java-dependency
+#- name: Add core dep repos
+#  apt_repository:
+#    repo: 'deb http://deb.debian.org/debian stretch-backports main'
+#    update_cache: no
+#  become: yes
+
+- name: Install core deps
+  apt:
+    name:
+#      - openjdk-11-jdk
+      - curl
+      - tmux
+    update_cache: yes
+    state: latest
+  become: yes
+  tags: update
+
+#- name: Set default Java version
+#  command: update-java-alternatives -s java-1.11.0-openjdk-amd64
+#  become: yes
+
+- name: Get download token from Cobalt Strike website
+  shell: |
+    curl -s https://www.cobaltstrike.com/download -d "dlkey={{ license_key }}" | grep 'href="/downloads/' | cut -d '/' -f3
+  register: download_token
+
+- name: Download Cobalt Strike tarball
+  get_url:
+    url: "https://www.cobaltstrike.com/downloads/{{ download_token.stdout }}/cobaltstrike-dist.tgz"
+    dest: "/tmp/"
+    mode: get
+
+- name: Extract the Cobalt Strike tarball
+  unarchive:
+    src: /tmp/cobaltstrike-dist.tgz
+    dest: "{{ ansible_env.HOME }}"
+    remote_src: yes
+  become: no
+
+- name: Update Cobalt Strike from the CS directory
+  shell: ./update
+  args:
+    chdir: "{{ ansible_env.HOME }}/cobaltstrike"
+  tags: update_cs
+  # tag to update
+  become: no

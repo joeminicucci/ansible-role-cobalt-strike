@@ -1,0 +1,21 @@
+---
+# tasks file for cobalt_strike role
+
+# Setup/install task
+#- name: Include Windows Setup
+#  include_tasks: "windows-setup-cobaltstrike.yml"
+#  when: ansible_os_family == "Windows"
+
+- name: Include tasks to install Cobalt Strike
+  include_tasks: "setup-cobaltstrike.yml"
+  tags: always
+
+- name: Include tasks for Cobalt Strike role Teamserver or Operator
+  include_tasks: "configure-{{ cobalt_strike_role }}.yml"
+  tags: always
+
+# Cleanup
+- name: Remove Cobalt Strike tarballs
+  file:
+    path: "/tmp/*.tgz"
+    state: absent

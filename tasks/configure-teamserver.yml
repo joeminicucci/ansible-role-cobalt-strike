@@ -1,0 +1,118 @@
+---
+# Configure CS installation as Teamserver and start the Teamserver
+- name: Create profile directory in CS directory
+  file:
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles"
+    state: directory
+
+- name: Copy C2 Profile file with owner and permissions
+  copy:
+    src: "{{ profile_directory }}/{{ c2_profile }}"
+    dest: "{{ ansible_env.HOME }}/cobaltstrike/profiles"
+    mode: '0644'
+  when: c2_profile != None
+
+- name: Download Default C2 profile
+  get_url:
+    url: "https://raw.githubusercontent.com/rsmudge/Malleable-C2-Profiles/master/normal/reference.profile"
+    dest: "{{ ansible_env.HOME }}/cobaltstrike/profiles"
+    mode: '0644'
+  when: c2_profile == None
+
+- name: Copy TLS Key Pair - Private Key
+  copy:
+    src: "{{ cert_directory }}/{{ priv_cert_filename }}"
+    dest: "{{ ansible_env.HOME }}/cobaltstrike/profiles"
+    mode: '0644'
+  when: domain != None
+
+- name: Copy TLS Key Pair - Public Key
+  copy:
+    src: "{{ cert_directory }}/{{ cert_filename }}"
+    dest: "{{ ansible_env.HOME }}/cobaltstrike/profiles"
+    mode: '0644'
+  when: domain != None
+
+- name: Prepare TLS keypair P12 using OpenSSL
+  register: p12reg
+  community.crypto.openssl_pkcs12:
+    action: export
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ domain }}.p12"
+    friendly_name: "{{ domain }}"
+    privatekey_path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ priv_cert_filename }}"
+    certificate_path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ cert_filename }}"
+    passphrase: passypass
+    state: present
+  when: domain != None
+
+- name: Generate TLS Java Keystore using PKCS12
+  community.general.java_cert:
+    pkcs12_path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ domain }}.p12"
+    pkcs12_alias: "{{ domain }}"
+    pkcs12_password: passypass
+    keystore_path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ domain }}_cert.jks"
+    keystore_pass: "{{ tls_pass }}"
+    keystore_create: yes
+    cert_alias: "{{ domain }}"
+    state: present
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/opt/jdk8/bin"
+  when: domain != None
+#- debug:
+#    msg: "THE TLS PASS IS: {{ tls_pass }}"
+
+- name: Remove TLS Key Pair - Private Key
+  file:
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ priv_cert_filename }}"
+    state: absent
+  when: domain != None
+
+- name: Remove TLS Key Pair - Public Key
+  file:
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ cert_filename }}"
+    state: absent
+  when: domain != None
+
+- name: Remove TLS Key Pair P12
+  file:
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ domain }}.p12"
+    state: absent
+  when: domain != None
+
+- name: Add TLS certificate to profile
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ c2_profile if c2_profile != None else 'reference.profile' }}"
+    block: |
+      https-certificate {
+          set keystore "{{ ansible_env.HOME }}/cobaltstrike/profiles/{{ domain }}_cert.jks";
+          set password "{{ tls_pass }}";
+      }
+  when: domain != None
+
+- name: Start Teamserver inside tmux session
+  shell: |
+    tmux has-session -t teamserver_session 2>/dev/null;
+    if [ $? -ne 0 ]; then tmux new-session -d -s teamserver_session './teamserver {{ bind_address }} "{{ teamserver_password }}" ./profiles/{{ c2_profile if c2_profile != None else 'reference.profile' }}'
+    fi
+  args:
+    chdir: "{{ ansible_env.HOME }}/cobaltstrike"
+  register: teamserverstart
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/opt/jdk8/bin"
+  become: yes
+
+#- name: Start Teamserver inside shell
+#  shell: |
+#    nohup ./teamserver {{ ansible_default_ipv4.address }} {{ teamserver_password }} ./profiles/{{ c2_profile_url | basename }} > teamserver.out 2>&1 &
+#  args:
+#    chdir: "{{ ansible_env.HOME }}/cobaltstrike"
+#  register: teamserverstart
+#  environment:
+#    PATH: "{{ ansible_env.PATH }}:/opt/jdk8/bin"
+#  become: yes
+
+- name: Waiting for teamserver service to open
+  wait_for:
+    port: 50050
+    delay: 8
+    timeout: 240

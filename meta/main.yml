@@ -1,0 +1,17 @@
+---
+# meta file for Cobalt Strike role
+galaxy_info:
+  role_name: cobalt_strike
+  author: Joe Minicucci
+  description: Install Cobalt Strike clients and teamservers.
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Debian
+      versions:
+        - stretch
+        #- buster
+  galaxy_tags:
+    - cobaltstrike
+    - redteam
+dependencies: []
