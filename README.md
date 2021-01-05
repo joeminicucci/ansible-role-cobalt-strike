@@ -1,5 +1,5 @@
 # Ansible Role: Cobalt Strike
-This Ansible Role is intended to install Cobalt Strike >= 4.0 and to configure it either as Operator (client) or Teamserver (server). It has been tested on Debian Stretch Amazon AMIs.
+This Ansible Role is intended to install Cobalt Strike >= 4.0 and to configure it either as Operator (client) or Teamserver (server). It has been tested on Debian Stretch Amazon AMIs. It should be run with `ansible_python_interpreter=/usr/bin/python3` contained within the --extra-vars argmument.
 
 It is based on [chryzsh's CS Ansible Role](https://github.com/chryzsh/ansible-role-cobalt-strike), with bug fixes and the implementation of the following features:
 - BYO TLS key pair
