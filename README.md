@@ -87,14 +87,14 @@ cp <location of c2 profile files> ../c2_profiles
 Execute the playbook with `--extra-vars` to avoid placing your license key or password in any code.
 
 ```bash
-ansible-playbook --extra-vars 'license_key=aaaa-bbbb-cccc-dddd bind_address=1.1.1.1 teamserver_password=goodpass domain=megacorp.com c2_profile=jquery-3.3.1.profile' --user=admin --private-key=./data/ssh_keys/172.16.139.216 -i 172.16.139.216, ./cobalt_strike.yml
+ansible-playbook --extra-vars 'ansible_python_interpreter=/usr/bin/python3 license_key=aaaa-bbbb-cccc-dddd bind_address=1.1.1.1 teamserver_password=goodpass domain=megacorp.com c2_profile=jquery-3.3.1.profile' --user=admin --private-key=./data/ssh_keys/172.16.139.216 -i 172.16.139.216, ./cobalt_strike.yml
 
 ```
 
 Installing as `operator` only requires a license key variable. The interpreter directive may not be necessary depending on the environment.
 
 ```bash
-ansible-playbook --extra-vars "license_key=1234-5678-1234-5678 cobalt_strike_role=operator ansible_python_interpreter=/usr/bin/python3" --user=$USER --connection=local -i localhost, ./cobalt_strike.yml
+ansible-playbook --extra-vars "ansible_python_interpreter=/usr/bin/python3 license_key=1234-5678-1234-5678 cobalt_strike_role=operator" --user=$USER --connection=local -i localhost, ./cobalt_strike.yml
 ```
 
 ## Contributions
