@@ -98,6 +98,11 @@
   become: yes
   tags: update
 
+- name: Install pyOpenSSL to solve openssl errors in key generation
+  pip:
+    name: pyOpenSSL
+    executable: pip3
+
 #- name: Set default Java version
 #  command: update-java-alternatives -s java-1.11.0-openjdk-amd64
 #  become: yes
