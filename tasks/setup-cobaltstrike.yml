@@ -91,6 +91,8 @@
 #      - openjdk-11-jdk
       - curl
       - tmux
+      - libssl-dev
+      - python3-pip
     update_cache: yes
     state: latest
   become: yes
