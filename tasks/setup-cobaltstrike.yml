@@ -102,7 +102,7 @@
 
 - name: Get download token from Cobalt Strike website
   shell: |
-    curl -s https://www.cobaltstrike.com/download -d "dlkey={{ license_key }}" | grep 'href="/downloads/' | cut -d '/' -f3
+    curl -s https://www.cobaltstrike.com/download -d "dlkey={{ license_key }}" | grep -E 'href="/downloads/[a-z0-9]+' | cut -d '/' -f3
   register: download_token
 
 - name: Download Cobalt Strike tarball
